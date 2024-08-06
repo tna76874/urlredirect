@@ -74,7 +74,7 @@ class Redirect(Resource):
         if redirect_url is not None:
             return redirect(redirect_url, code=303)
         else:
-            return {'message': 'Redirect not found'}, 404
+            return redirect(url_for('index'), code=303)
 api.add_resource(Redirect, '/<string:key>')
 
 ## HEALTHCHECK
@@ -91,6 +91,11 @@ def index():
         return redirect(landing_page, code=303)
     else:
         return render_template_string('')
+    
+# ERROR HANDLING
+@app.errorhandler(500)
+def handle_server_error(error):
+    return redirect(url_for('index'), code=303)
 
 if __name__ == '__main__':
     app.run(debug=True)
