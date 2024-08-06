@@ -12,8 +12,11 @@ class ConfigLoader:
 
     def load_config(self):
         """Lädt die Konfiguration aus der YAML-Datei."""
-        with open(self.file_path, 'r') as file:
-            return yaml.safe_load(file)
+        try:
+            with open(self.file_path, 'r') as file:
+                return yaml.safe_load(file)
+        except:
+            return {}
     
     def get_keys(self):
         api_keys = self.config.get('api_keys', [])
