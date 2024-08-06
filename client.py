@@ -63,6 +63,26 @@ class RedirectManager:
         else:
             return {'message': 'Failed to add redirect', 'error': response.json()}
 
+    def get_all_redirects(self):
+        url = f"{self.host}/api/get_all_redirects"
+        headers = {'Authorization': self.key}
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            return pd.DataFrame(response.json().get('redirects',{}))
+        else:
+            return {'message': 'Failed to retrieve redirects', 'error': response.json()}
+
+    def delete_all_redirects(self):
+        url = f"{self.host}/api/delete_all_redirects"
+        headers = {'Authorization': self.key}
+        response = requests.delete(url, headers=headers)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {'message': 'Failed to delete all redirects', 'error': response.json()}
+
     def add_alias(self, **kwargs):
         url = f"{self.host}/api/add_alias"
         headers = {'Authorization': auth_key}

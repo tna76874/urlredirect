@@ -132,7 +132,28 @@ class DatabaseManager:
             if existing_alias:
                 session.delete(existing_alias)
                 session.commit()
+                
+    def _delete_redirect(self, key):
+        """
+        Delete a redirect or alias based on the provided key.
+    
+        :param key: The key of the redirect or alias to delete.
+        """
+        with self.get_session() as session:
+            # Check if the key is an alias
+            alias = session.query(Alias).filter_by(key=key).first()
+            if alias:
+                # If it is an alias, remove it
+                self._remove_alias(key)
 
+            # Check if the key is a redirect
+            redirect_to_delete = session.query(Redirect).filter_by(key=key).first()
+            if redirect_to_delete:
+                # Delete all associated aliases
+                session.query(Alias).filter_by(rid=redirect_to_delete.rid).delete()
+                # Delete the redirect
+                session.delete(redirect_to_delete)
+                session.commit()
 
     def _rename_key(self, old=None, new=None):
         """
@@ -185,6 +206,51 @@ class DatabaseManager:
                 return redirect_url
             else:
                 return None
+
+    def _get_all_redirects(self):
+        """
+        Get all redirects and aliases in a unified list.
+
+        :return: A list of dictionaries containing 'key' and 'redirect'.
+        """
+        with self.get_session() as session:
+            result = []
+
+            # Get all redirects
+            redirects = session.query(Redirect).all()
+            for redirect in redirects:
+                result.append({
+                    'key': redirect.key,
+                    'redirect': redirect.redirect
+                })
+
+            # Get all aliases and their corresponding redirect URLs
+            aliases = session.query(Alias).all()
+            for alias in aliases:
+                redirect = session.query(Redirect).filter_by(rid=alias.rid).first()
+                if redirect:
+                    result.append({
+                        'key': alias.key,
+                        'redirect': redirect.redirect
+                    })
+
+            return result
+
+    def _delete_all(self):
+        """
+        Delete all entries in Redirect and Alias tables.
+    
+        :return: None
+        """
+        with self.get_session() as session:
+            # Delete all entries in Redirect
+            session.query(Redirect).delete()
+            
+            # Delete all entries in Alias
+            session.query(Alias).delete()
+            
+            # Commit the changes to the database
+            session.commit()
 
     @contextmanager
     def get_session(self):

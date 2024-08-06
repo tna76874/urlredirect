@@ -46,6 +46,17 @@ class AddRedirect(Resource):
             return {'message': 'Failed to add redirect', 'error': str(e)}, 500    
 api.add_resource(AddRedirect, '/api/add_redirect')
 
+## GETTING ALL REDIRECTS
+class GetAllRedirects(Resource):
+    def get(self):
+        try:
+            redirects = db._get_all_redirects()  # Ruft die Methode zum Abrufen aller Redirects auf
+            return {'redirects': redirects}, 200
+        except Exception as e:
+            return {'message': 'Failed to retrieve redirects', 'error': str(e)}, 500
+
+api.add_resource(GetAllRedirects, '/api/get_all_redirects')
+
 ## ADDING ALIAS
 add_alias_parser = reqparse.RequestParser()
 add_alias_parser.add_argument('alias', type=str, help='The alias key', required=True)
@@ -65,6 +76,18 @@ class AddAlias(Resource):
         except Exception as e:
             return {'message': 'Failed to add alias', 'error': str(e)}, 500    
 api.add_resource(AddAlias, '/api/add_alias')
+
+## DELETING ALL REDIRECTS
+class DeleteAllRedirects(Resource):
+    @require_auth
+    def delete(self):
+        try:
+            db._delete_all()  # Ruft die Methode zum Löschen aller Redirects auf
+            return {'message': 'All redirects deleted successfully'}, 200
+        except Exception as e:
+            return {'message': 'Failed to delete all redirects', 'error': str(e)}, 500
+
+api.add_resource(DeleteAllRedirects, '/api/delete_all_redirects')
 
 ## URL REDIRECT ENDPOINT
 class Redirect(Resource):
