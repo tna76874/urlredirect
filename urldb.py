@@ -26,6 +26,13 @@ class Redirect(Base):
     events = relationship("Event", back_populates="redirect")
 
 
+class Alias(Base):
+    __tablename__ = 'aliases'
+
+    aid = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    key = Column(String, unique=True, nullable=False)
+    rid = Column(String, ForeignKey('redirects.rid'), nullable=False)
+    
 class Event(Base):
     __tablename__ = 'events'
 
@@ -37,12 +44,6 @@ class Event(Base):
     # Relationship to redirects
     redirect = relationship("Redirect", back_populates="events")
     
-class Alias(Base):
-    __tablename__ = 'aliases'
-
-    aid = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    key = Column(String, unique=True, nullable=False)
-    rid = Column(String, ForeignKey('redirects.rid'), nullable=False)
 
 
     
@@ -60,6 +61,44 @@ class DatabaseManager:
         self.engine = create_engine(db_url, echo=False)
         self.session = Session(bind=self.engine)
         self.ensure_all_tables()
+
+    def _add_event(self, key=None, source=None):
+        """
+        Add a new event associated with a redirect or alias.
+    
+        :param key: The key of the redirect or alias.
+        :param source: The source of the event.
+        :return: The created event object.
+        """
+        # Check if both key and source are None
+        if key is None or source is None:
+            raise ValueError("Both 'key' and 'source' must be provided.")
+        
+        with self.get_session() as session:
+            # Try to find the redirect by key
+            redirect = session.query(Redirect).filter_by(key=key).first()
+            
+            if redirect:
+                rid = redirect.rid
+            else:
+                # If not found in Redirect, check in Alias
+                alias = session.query(Alias).filter_by(key=key).first()
+                if alias:
+                    redirect = session.query(Redirect).filter_by(rid=alias.rid).first()
+                    if redirect:
+                        rid = redirect.rid
+                    else:
+                        return
+                else:
+                    return
+    
+            # Create a new event
+            new_event = Event(rid=rid, source=source)
+            session.add(new_event)
+            
+            # Commit the changes to the database
+            session.commit()
+
 
     def _ensure_redirect(self, **data):
         """
@@ -251,6 +290,32 @@ class DatabaseManager:
             
             # Commit the changes to the database
             session.commit()
+
+    def _allow_request(self, source):
+        """
+        Check if the request from the given source is allowed based on the rate limit.
+    
+        :param source: The source (IP address) of the request.
+        :return: True if the request is allowed, False otherwise.
+        """
+        try:
+            with self.get_session() as session:
+                # Define the time window (last 2 minutes)
+                time_window = datetime.utcnow() - timedelta(minutes=2)
+    
+                # Count the number of events for the given source within the time window
+                request_count = session.query(Event).filter(
+                    Event.source == source,
+                    Event.date >= time_window
+                ).count()
+    
+                # Check if the request count exceeds the limit
+                if request_count >= 30:
+                    return False  # Too many requests
+                else:
+                    return True  # Request is allowed
+        except:
+            return False  
 
     @contextmanager
     def get_session(self):

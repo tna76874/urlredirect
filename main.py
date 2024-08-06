@@ -5,7 +5,7 @@ url redirect
 """
 from urldb import *
 from helper import *
-from flask import Flask, request, redirect, render_template_string
+from flask import Flask, request, redirect, render_template_string, url_for
 from flask_restful import Api, Resource, reqparse
 from functools import wraps
 
@@ -92,9 +92,15 @@ api.add_resource(DeleteAllRedirects, '/api/delete_all_redirects')
 ## URL REDIRECT ENDPOINT
 class Redirect(Resource):
     def get(self, key):
+        ip = request.remote_addr
+        allowed = db._allow_request(ip)
+        if allowed==False:
+            return {'message': 'Not allowed', 'error': 'too many requests'}, 500
+        
         redirect_url = db._get_redirect(key)
         
         if redirect_url is not None:
+            db._add_event(key=key, source=ip)
             return redirect(redirect_url, code=303)
         else:
             return redirect(url_for('index'), code=303)
