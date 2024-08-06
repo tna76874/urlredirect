@@ -14,7 +14,7 @@ RUN git --git-dir=/app/.git rev-parse HEAD > COMMIT_HASH && \
 
 COPY main.py /app/main.py
 COPY helper.py /app/helper.py
-COPY client.py /app/client.py
+COPY client /app/client
 COPY urldb.py /app/urldb.py
 RUN chmod -R +x /app
 
