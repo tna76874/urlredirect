@@ -8,7 +8,7 @@ package_version = GitVersion('./client')
 setup(
     name='urlclient',
     version=package_version._get_semantic_version(),
-    description='Url Redirekt Client',
+    description='Url Redirect Client',
     url='https://github.com/tna76874',
     author='lmh',
     author_email='',
