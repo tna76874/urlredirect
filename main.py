@@ -92,7 +92,7 @@ api.add_resource(DeleteAllRedirects, '/api/delete_all_redirects')
 ## URL REDIRECT ENDPOINT
 class Redirect(Resource):
     def get(self, key):
-        ip = request.remote_addr
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr)
         allowed = db._allow_request(ip)
         if allowed==False:
             return {'message': 'Not allowed', 'error': 'too many requests'}, 500
