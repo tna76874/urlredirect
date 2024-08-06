@@ -2,7 +2,7 @@ FROM python:3.9
 
 WORKDIR /app
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y git libgl1 libmagic1
 
 COPY requirements.txt /app/requirements.txt
