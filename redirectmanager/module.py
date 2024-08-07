@@ -93,7 +93,7 @@ class RedirectManager:
             raise ValueError("Server not reachable")      
         
         client_version = Version(client_version)
-        server_version = server_version
+        server_version = Version(server_version)
         
         passed = client_version==server_version
         if passed==False:
