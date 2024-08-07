@@ -3,10 +3,10 @@
 from setuptools import find_packages, setup
 
 from version import *
-package_version = GitVersion('./client')
+package_version = GitVersion('./redirectmanager')
 
 setup(
-    name='urlclient',
+    name='redirectmanager',
     version=package_version._get_semantic_version(),
     description='Url Redirect Client',
     url='https://github.com/tna76874',
@@ -31,7 +31,7 @@ setup(
     python_requires = ">=3.6",
     entry_points={
         "console_scripts": [
-            "urlmanage = client.cli:main",
+            "redirectmanager = client.cli:main",
         ],
     },
     )
