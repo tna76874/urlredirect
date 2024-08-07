@@ -104,7 +104,9 @@ def redirect_to_url(key):
         db._add_event(key=key, source=ip)
         return render_template('redirect.html',
                                redirect=redirect_url,
-                               matomo=config.get_matomo())
+                               matomo=config.get_matomo(),
+                               matomo_is_enabled = config.matomo_is_enabled(),
+                               )
     else:
         return redirect(url_for('index'), code=303)
 

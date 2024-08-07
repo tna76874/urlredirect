@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirect</title>
     <script>
-        {% if matomo|length != 0 %}
+        {% if matomo_enabled|default(False) 0 %}
         var _paq = window._paq = window._paq || [];
         _paq.push(['trackPageView']);
         _paq.push(['enableLinkTracking']);

@@ -43,7 +43,10 @@ class ConfigLoader:
 
     def get_matomo(self):
         return self.config.get('matomo', {})
-
+    
+    def matomo_is_enabled(self):
+        return self.get_matomo()!={}
+    
     def _get_client_version(self):
         """Holt die Version für den Eintrag './redirectmanager' aus self.versions."""
         return self.versions.get('./redirectmanager', {})
