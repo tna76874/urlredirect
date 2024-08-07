@@ -17,35 +17,27 @@ Base = declarative_base()
 
 class Redirect(Base):
     __tablename__ = 'redirects'
-
     rid = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     key = Column(String, unique=True, nullable=False)
     redirect = Column(String, nullable=False)
-
     # Relationship to events
     events = relationship("Event", back_populates="redirect")
 
-
 class Alias(Base):
     __tablename__ = 'aliases'
-
     aid = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     key = Column(String, unique=True, nullable=False)
     rid = Column(String, ForeignKey('redirects.rid'), nullable=False)
     
 class Event(Base):
     __tablename__ = 'events'
-
     eid = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     rid = Column(String, ForeignKey('redirects.rid'), nullable=False)
     date = Column(DateTime, default=datetime.utcnow)
     source = Column(String, nullable=False)
-
     # Relationship to redirects
     redirect = relationship("Redirect", back_populates="events")
     
-
-
     
 class DatabaseManager:
     """
@@ -86,7 +78,7 @@ class DatabaseManager:
                 if alias:
                     redirect = session.query(Redirect).filter_by(rid=alias.rid).first()
                     if redirect:
-                        rid = redirect.rid
+                        rid = alias.aid
                     else:
                         return
                 else:

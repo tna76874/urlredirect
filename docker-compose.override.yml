@@ -1,0 +1,31 @@
+services:
+  db:
+    image: mariadb:10.11
+    command: --max-allowed-packet=64MB
+    restart: always
+    volumes:
+      - ./matomo/db:/var/lib/mysql:Z
+    env_file:
+      - ./matomo/config/db.env
+
+  app:
+    image: matomo:5.1.0-fpm-alpine
+    restart: always
+    links:
+      - db
+    volumes:
+      - ./matomo/html:/var/www/html:z
+    environment:
+      - MATOMO_DATABASE_HOST=db
+      - PHP_MEMORY_LIMIT=2048M
+    env_file:
+      - ./matomo/config/db.env
+
+  web:
+    image: nginx:alpine
+    restart: always
+    volumes:
+      - ./matomo/html:/var/www/html:z,ro
+      - ./matomo/config/matomo.conf:/etc/nginx/conf.d/default.conf:z,ro
+    ports:
+      - 8080:80

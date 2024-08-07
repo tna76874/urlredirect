@@ -13,3 +13,4 @@ services:
     restart: on-failure
     volumes:
       - ./data:/app/data
+

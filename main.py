@@ -5,14 +5,14 @@ url redirect
 """
 from urldb import *
 from helper import *
-from flask import Flask, request, redirect, render_template_string, url_for
+from flask import Flask, request, redirect, render_template_string, url_for, render_template
 from flask_restful import Api, Resource, reqparse
 from functools import wraps
 
+config = ConfigLoader('data/config.yml')
 app = Flask(__name__)
 api = Api(app)
 
-config = ConfigLoader('data/config.yml')
 db = DatabaseManager(data='data/data.db')
 
 def require_auth(f):
@@ -90,21 +90,23 @@ class DeleteAllRedirects(Resource):
 api.add_resource(DeleteAllRedirects, '/api/delete_all_redirects')
 
 ## URL REDIRECT ENDPOINT
-class Redirect(Resource):
-    def get(self, key):
-        ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-        allowed = db._allow_request(ip)
-        if allowed==False:
-            return {'message': 'Not allowed', 'error': 'too many requests'}, 500
-        
-        redirect_url = db._get_redirect(key)
-        
-        if redirect_url is not None:
-            db._add_event(key=key, source=ip)
-            return redirect(redirect_url, code=303)
-        else:
-            return redirect(url_for('index'), code=303)
-api.add_resource(Redirect, '/<string:key>')
+@app.route('/<string:key>', methods=['GET'])
+def redirect_to_url(key):
+    ip = [item.strip() for item in request.headers.get('X-Forwarded-For', request.remote_addr).split(',')][0]
+    allowed = db._allow_request(ip)
+    
+    if not allowed:
+        return {'message': 'Not allowed', 'error': 'too many requests'}, 500
+    
+    redirect_url = db._get_redirect(key)
+    
+    if redirect_url is not None:
+        db._add_event(key=key, source=ip)
+        return render_template('redirect.html',
+                               redirect=redirect_url,
+                               matomo=config.get_matomo())
+    else:
+        return redirect(url_for('index'), code=303)
 
 ## HEALTHCHECK
 class HealthCheck(Resource):

@@ -41,6 +41,9 @@ class ConfigLoader:
     def get_landingpage(self):
         return self.config.get('landing_page', None)
 
+    def get_matomo(self):
+        return self.config.get('matomo', {})
+
     def _get_client_version(self):
         """Holt die Version für den Eintrag './redirectmanager' aus self.versions."""
         return self.versions.get('./redirectmanager', {})
