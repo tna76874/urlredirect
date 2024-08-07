@@ -112,6 +112,13 @@ class HealthCheck(Resource):
         return {'status': 'healthy'}, 200
 api.add_resource(HealthCheck, '/api/health')
 
+## VERSIONS
+class VersionCheck(Resource):
+    def get(self):
+        return {'client': config._get_client_version()}, 200
+api.add_resource(VersionCheck, '/api/versions')
+
+
 ## LANDINGPAGE
 @app.route('/')
 def index():

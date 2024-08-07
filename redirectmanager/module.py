@@ -6,6 +6,38 @@ client
 import requests
 import pandas as pd
 import os
+import sys
+from packaging.version import Version
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
+import redirectmanager
+
+class RequestHandler:
+    def __init__(self, **kwargs):
+        self.host = kwargs.get('host')
+        self.key = kwargs.get('key')
+        self.headers = {'Authorization': self.key}
+
+    def post(self, endpoint, payload):
+        url = f"{self.host}{endpoint}"
+        response = requests.post(url, json=payload, headers=self.headers)
+        return self._handle_response(response)
+
+    def get(self, endpoint):
+        url = f"{self.host}{endpoint}"
+        response = requests.get(url, headers=self.headers)
+        return self._handle_response(response)
+
+    def delete(self, endpoint):
+        url = f"{self.host}{endpoint}"
+        response = requests.delete(url, headers=self.headers)
+        return self._handle_response(response)
+
+    def _handle_response(self, response):
+        if response.status_code in [200, 201]:
+            return {'status': True, 'response': response.json()}
+        else:
+            return {'status': False, 'response': response.json()}
 
 class SheetParser:
     def __init__(self, file_path):
@@ -40,6 +72,61 @@ class RedirectManager:
         if self.key is None:
             raise ValueError("Key must be provided.")
             
+        self.request_handler = RequestHandler(host = self.host, key = self.key)
+        
+        self._check_if_client_fit_server()
+        
+    def _get_client_version(self):
+        try:
+            return redirectmanager.__version__
+        except:
+            return None
+        
+    def _check_if_client_fit_server(self):
+        client_version = self._get_client_version()
+        if client_version==None:
+            return
+        server_version = self._get_server_version()
+        if server_version==None:
+            raise ValueError("Server not reachable")      
+        
+        client_version = Version(client_version)
+        server_version = server_version
+        
+        passed = client_version==server_version
+        if passed==False:
+            raise ValueError(f'Server {server_version.base_version} and client {client_version.base_version} not fitting')
+        
+    
+    def _get_server_version(self):       
+        response = self.request_handler.get("/api/versions")
+        if response.get('status')==True:
+            return response.get('response', {}).get('client', {}).get('semantic')
+        return None
+            
+    def add_redirect(self, **kwargs):
+        payload = {
+            'redirect': kwargs.get('redirect'),
+            'key': kwargs.get('key'),
+        }
+        return self.request_handler.post("/api/add_redirect", payload)
+
+    def get_all_redirects(self):
+        response = self.request_handler.get("/api/get_all_redirects")
+        if response.get('status')==True:
+            return pd.DataFrame(response.get('response', {}).get('redirects', {}))
+        return None
+
+    def delete_all_redirects(self):
+        return self.request_handler.delete("/api/delete_all_redirects")
+
+    def add_alias(self, **kwargs):
+        payload = {
+            'alias': kwargs.get('alias'),
+            'key': kwargs.get('key'),
+        }
+        return self.request_handler.post("/api/add_alias", payload)
+
     def update_from_file(self, file_path):
         csv = SheetParser(file_path)
         if not isinstance(csv.redirect,type(None)):
@@ -48,54 +135,6 @@ class RedirectManager:
         if not isinstance(csv.alias,type(None)):
             for index, row in csv.alias.iterrows():
                 self.add_alias(**row)
-
-    def add_redirect(self, **kwargs):
-        url = f"{self.host}/api/add_redirect"
-        headers = {'Authorization': self.key}
-        payload = {
-            'redirect': kwargs.get('redirect'),
-            'key': kwargs.get('key'),
-        }
-        response = requests.post(url, json=payload, headers=headers)
-        
-        if response.status_code == 201:
-            return response.json()
-        else:
-            return {'message': 'Failed to add redirect', 'error': response.json()}
-
-    def get_all_redirects(self):
-        url = f"{self.host}/api/get_all_redirects"
-        headers = {'Authorization': self.key}
-        response = requests.get(url, headers=headers)
-        
-        if response.status_code == 200:
-            return pd.DataFrame(response.json().get('redirects',{}))
-        else:
-            return {'message': 'Failed to retrieve redirects', 'error': response.json()}
-
-    def delete_all_redirects(self):
-        url = f"{self.host}/api/delete_all_redirects"
-        headers = {'Authorization': self.key}
-        response = requests.delete(url, headers=headers)
-        
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return {'message': 'Failed to delete all redirects', 'error': response.json()}
-
-    def add_alias(self, **kwargs):
-        url = f"{self.host}/api/add_alias"
-        headers = {'Authorization': auth_key}
-        payload = {
-            'alias': kwargs.get('alias'),
-            'key': kwargs.get('key'),
-        }
-        response = requests.post(url, json=payload, headers=headers)
-        
-        if response.status_code == 201:
-            return response.json()
-        else:
-            return {'message': 'Failed to add alias', 'error': response.json()}
         
 if __name__ == "__main__":
     host = "http://localhost:5000"

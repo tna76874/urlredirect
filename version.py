@@ -8,8 +8,23 @@ import os
 import subprocess
 from datetime import datetime, timedelta
 import argparse
+import yaml
 
 import sys
+
+class VersionYAML:
+    def __init__(self, *paths):
+        self.versions = {k:GitVersion(k) for k in paths}
+    
+    def _get_list(self):
+        version_dict = {k:v._get_dict() for k,v in self.versions.items()}
+        return version_dict
+
+    def save_as_yaml(self, path):
+        dict_list = self._get_list()
+        with open(path, 'w') as yaml_file:
+            yaml.dump(dict_list, yaml_file, default_flow_style=False) 
+
 
 class GitVersion:
     def __init__(self, path):
@@ -29,6 +44,15 @@ class GitVersion:
         
         self._get_last_change_date()
         self._get_change_count()
+        
+    def _get_dict(self):
+        return {
+                'hash' : self.commit_hash,
+                'date': self.change_date.isoformat(),
+                'count' : self.change_count,
+                'version' : self.version(),
+                'semantic' : self._get_semantic_version(),
+                }
         
     def _get_semantic_version(self):
         return f'{self.checkpoints.get("major")}.{self.checkpoints.get("minor")}.{self.count_commits_since_last_minor()}'
@@ -89,5 +113,5 @@ def main():
 
 if __name__ == "__main__":
     pass
-    self = GitVersion('./client')
+    self = GitVersion('./redirectmanager')
     # main()
