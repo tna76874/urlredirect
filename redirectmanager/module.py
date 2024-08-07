@@ -9,6 +9,8 @@ import os
 import sys
 from packaging.version import Version
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from importlib.metadata import version, PackageNotFoundError
+
 
 import redirectmanager
 
@@ -78,10 +80,10 @@ class RedirectManager:
         
     def _get_client_version(self):
         try:
-            return redirectmanager.__version__
-        except:
+            return version("redirectmanager")
+        except PackageNotFoundError:
             return None
-        
+            
     def _check_if_client_fit_server(self):
         client_version = self._get_client_version()
         if client_version==None:
